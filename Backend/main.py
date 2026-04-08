@@ -8,6 +8,7 @@ import numpy as np
 import pickle
 import os
 from pathlib import Path
+from threading import Lock
 
 app = FastAPI(title="Image Captioning API")
 
@@ -20,29 +21,65 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Load models and data
-print("Loading models...")
-
 BASE_DIR = Path(__file__).resolve().parent
 RESEARCH_DIR = BASE_DIR.parent / "Reserch"
 
-# Load ResNet50 for feature extraction
-resnet_model = ResNet50(weights='imagenet', input_shape=(224, 224, 3))
-feature_model = Model(resnet_model.input, resnet_model.layers[-2].output)
-
-# Load word mappings
-with open(RESEARCH_DIR / 'word_to_idx.pkl', 'rb') as f:
-    word_to_idx = pickle.load(f)
-
-with open(RESEARCH_DIR / 'idx_to_word.pkl', 'rb') as f:
-    idx_to_word = pickle.load(f)
-
-# Load the trained captioning model (using the last checkpoint)
-model_path = RESEARCH_DIR / 'model_checkpoints' / 'model_19.h5'
-caption_model = load_model(model_path)
-
-VOCAB_SIZE = len(word_to_idx) + 1
+# Models are loaded lazily on first /caption call so /health stays fast on cold starts.
+resnet_model = None
+feature_model = None
+word_to_idx = None
+idx_to_word = None
+caption_model = None
+VOCAB_SIZE = None
 max_len = 38  # Updated to match the model's expected shape of 38
+
+models_loaded = False
+model_load_error = None
+model_lock = Lock()
+
+
+def load_models_once():
+    global resnet_model, feature_model, word_to_idx, idx_to_word
+    global caption_model, VOCAB_SIZE, models_loaded, model_load_error
+
+    if models_loaded:
+        return
+
+    with model_lock:
+        if models_loaded:
+            return
+
+        print("Loading models...")
+
+        required_files = [
+            RESEARCH_DIR / 'word_to_idx.pkl',
+            RESEARCH_DIR / 'idx_to_word.pkl',
+            RESEARCH_DIR / 'model_checkpoints' / 'model_19.h5',
+        ]
+        missing_files = [str(path) for path in required_files if not path.exists()]
+        if missing_files:
+            model_load_error = f"Missing required model files: {missing_files}"
+            raise FileNotFoundError(model_load_error)
+
+        try:
+            resnet_model = ResNet50(weights='imagenet', input_shape=(224, 224, 3))
+            feature_model = Model(resnet_model.input, resnet_model.layers[-2].output)
+
+            with open(RESEARCH_DIR / 'word_to_idx.pkl', 'rb') as f:
+                word_to_idx = pickle.load(f)
+
+            with open(RESEARCH_DIR / 'idx_to_word.pkl', 'rb') as f:
+                idx_to_word = pickle.load(f)
+
+            model_path = RESEARCH_DIR / 'model_checkpoints' / 'model_19.h5'
+            caption_model = load_model(model_path)
+
+            VOCAB_SIZE = len(word_to_idx) + 1
+            models_loaded = True
+            model_load_error = None
+        except Exception as exc:
+            model_load_error = str(exc)
+            raise
 
 def preprocess_image(img_path):
     """Preprocess image for ResNet50"""
@@ -85,7 +122,10 @@ async def generate_caption(file: UploadFile = File(...)):
     if not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="File must be an image.")
 
+    temp_path = None
     try:
+        load_models_once()
+
         # Save uploaded file temporarily
         temp_path = f"temp_{file.filename}"
         with open(temp_path, "wb") as buffer:
@@ -105,7 +145,7 @@ async def generate_caption(file: UploadFile = File(...)):
         return {"caption": caption}
     
     except Exception as e:
-        if os.path.exists(temp_path):
+        if temp_path and os.path.exists(temp_path):
             os.remove(temp_path)
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -115,7 +155,12 @@ async def root():
 
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy", "description": "Image Captioning API is running smoothly."}
+    return {
+        "status": "healthy",
+        "description": "Image Captioning API is running smoothly.",
+        "models_loaded": models_loaded,
+        "model_load_error": model_load_error,
+    }
 
 if __name__ == "__main__":
     import uvicorn
