@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { UploadCloud, Image as ImageIcon, Sparkles, X, AlertCircle, Wand2 } from 'lucide-react';
+import { UploadCloud, Sparkles, X, AlertCircle, Wand2 } from 'lucide-react';
 import './App.css';
 
 function App() {
