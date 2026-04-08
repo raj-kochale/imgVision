@@ -1,0 +1,97 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.venv
+.venv/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb_checkpoints
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Model checkpoints and weights
+*.h5
+*.pkl
+*.pickle
+*.pt
+*.pth
+*.bin
+*.onnx
+
+# Large data files
+*.zip
+*.tar
+*.tar.gz
+data/
+
+# Logs
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+*.bak
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Environment files
+.env
+.env.local
+
+# Demo and checkpoint directories (optional - uncomment if needed)
+demo/
+# model_checkpoints/
+
+# Frontend (React)
+node_modules/
+Frontend/node_modules/
+Frontend/build/
+Frontend/dist/
+.next/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Backend temporary API files
+temp_*.jpg
+temp_*.jpeg
+temp_*.png
