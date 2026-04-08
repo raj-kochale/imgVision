@@ -53,6 +53,11 @@ Thumbs.db
 *.bin
 *.onnx
 
+# Keep minimal production artifacts for backend deployment
+!Reserch/word_to_idx.pkl
+!Reserch/idx_to_word.pkl
+!Reserch/model_checkpoints/model_19.h5
+
 # Large data files
 *.zip
 *.tar

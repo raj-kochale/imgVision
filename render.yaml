@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: imgvision-api
+    runtime: python
+    pythonVersion: 3.11
+    buildCommand: pip install -r Backend/requirements.txt
+    startCommand: cd Backend && uvicorn main:app --host 0.0.0.0 --port 8080
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11

@@ -7,6 +7,7 @@ from tensorflow.keras.preprocessing import image
 import numpy as np
 import pickle
 import os
+from pathlib import Path
 
 app = FastAPI(title="Image Captioning API")
 
@@ -22,19 +23,22 @@ app.add_middleware(
 # Load models and data
 print("Loading models...")
 
+BASE_DIR = Path(__file__).resolve().parent
+RESEARCH_DIR = BASE_DIR.parent / "Reserch"
+
 # Load ResNet50 for feature extraction
 resnet_model = ResNet50(weights='imagenet', input_shape=(224, 224, 3))
 feature_model = Model(resnet_model.input, resnet_model.layers[-2].output)
 
 # Load word mappings
-with open('../Reserch/word_to_idx.pkl', 'rb') as f:
+with open(RESEARCH_DIR / 'word_to_idx.pkl', 'rb') as f:
     word_to_idx = pickle.load(f)
 
-with open('../Reserch/idx_to_word.pkl', 'rb') as f:
+with open(RESEARCH_DIR / 'idx_to_word.pkl', 'rb') as f:
     idx_to_word = pickle.load(f)
 
 # Load the trained captioning model (using the last checkpoint)
-model_path = '../Reserch/model_checkpoints/model_19.h5'
+model_path = RESEARCH_DIR / 'model_checkpoints' / 'model_19.h5'
 caption_model = load_model(model_path)
 
 VOCAB_SIZE = len(word_to_idx) + 1
