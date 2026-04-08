@@ -1,5 +1,6 @@
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi import Response
 import tensorflow as tf
 from tensorflow.keras.applications.resnet50 import ResNet50, preprocess_input
 from tensorflow.keras.models import Model, load_model
@@ -161,6 +162,11 @@ async def health_check():
         "models_loaded": models_loaded,
         "model_load_error": model_load_error,
     }
+
+
+@app.head("/health")
+async def health_check_head():
+    return Response(status_code=200)
 
 if __name__ == "__main__":
     import uvicorn
